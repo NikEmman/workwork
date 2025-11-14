@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "Work work!",
+  "version": "1.0",
+  "description": "Adds a browser action icon to the toolbar. Add file and start the automation.",
+  "homepage_url": "https://github.com/NikEmman/workwork",
+
+  "icons": {
+    "48": "icons/peon-48.png"
+  },
+
+  "action": {
+    "default_icon": {
+      "32": "icons/peon-32.png"
+    },
+    "default_title": "work work!",
+    "default_popup": "popup/popup.html"
+  },
+
+  "permissions": ["activeTab", "downloads", "scripting", "notifications"],
+
+  "host_permissions": ["<all_urls>"]
+}

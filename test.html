@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fake ID search</title>
+  </head>
+
+  <body>
+    <input type="text" name="" id="id-input" />
+    <button id="search" placeholder="Αριθμός Ταυτοτητας">Search</button>
+  </body>
+  <script>
+    document.getElementById("search").addEventListener("click", () => {
+      // Simulate fetching and displaying results
+      const input = document.getElementById("id-input");
+      const resultsContainer = document.getElementById("results");
+      if (resultsContainer) {
+        resultsContainer.remove();
+      }
+
+      const results = document.createElement("div");
+      results.id = "results";
+
+      // Simulate async fetch with setTimeout
+      setTimeout(() => {
+        let dataset1 = `
+      <div class="result-item" data-name="John Doe" data-age="30">John Doe - 30</div>
+      <div class="result-item" data-name="Jane Smith" data-age="25">Jane Smith - 25</div>
+    `;
+        let dataset2 = `
+      <div class="result-item" data-name="Bibi Doe" data-age="30">Bibi Doe - 30</div>
+      <div class="result-item" data-name="Bibika Smith" data-age="25">Bibika Smith - 25</div>
+    `;
+        let datasetDefault =
+          '<div class="result-item" data-name="null" data-age="null">No such ID</div>';
+        switch (input.value) {
+          case "AH023321":
+            results.innerHTML = dataset1;
+            break;
+          case "AO0230203":
+            results.innerHTML = dataset2;
+            break;
+          default:
+            results.innerHTML = datasetDefault;
+        }
+      }, 1000); // Simulate 1 second delay
+
+      document.body.appendChild(results);
+    });
+  </script>
+</html>

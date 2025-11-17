@@ -1,4 +1,4 @@
-const idNumbers = ["AH023321", "9999999", "00000000"];
+const idNumbers = ["AH023321", "999999", "000000000"];
 
 document.getElementById("start").addEventListener("click", async () => {
   try {
@@ -18,7 +18,6 @@ document.getElementById("start").addEventListener("click", async () => {
             const pollInterval = 200; // Check every 200ms
             const maxAttempts = 40; // Total ~8s of polling
             let attempts = 0;
-
             const checkForResults = () => {
               const container = document.querySelector(".xdq");
               if (container) {
@@ -33,11 +32,14 @@ document.getElementById("start").addEventListener("click", async () => {
                 let node;
                 while ((node = walker.nextNode()) && !hasText) {
                   const text = node.textContent.replace(/\s+/g, " ").trim();
-                  if (text.length > 0) {
+                  if (
+                    text.length > 0 &&
+                    text !== "▼" &&
+                    !text.startsWith("Σφάλμα")
+                  ) {
                     hasText = true;
                   }
                 }
-
                 if (hasText) {
                   // Full extraction
                   const texts = [];
@@ -52,38 +54,34 @@ document.getElementById("start").addEventListener("click", async () => {
                     const text = fullNode.textContent
                       .replace(/\s+/g, " ")
                       .trim();
-                    if (text.length > 0) {
+                    // Skip empties, arrows, and short numerics to reduce noise
+                    if (
+                      text.length > 0 &&
+                      text !== "▼" &&
+                      !/^\d{1,3}$/.test(text) // e.g., skip standalone "44"
+                    ) {
                       texts.push(text);
                     }
                   }
-
                   const obj = {};
-                  for (let i = 0; i < texts.length - 1; i += 1) {
+
+                  for (let i = 0; i < texts.length; i++) {
                     const key = texts[i];
-                    const value = texts[i + 1];
-                    if (key && value) {
+                    const value = texts[(i + 1) % texts.length]; // wraparound for last element
+
+                    // Only add if key doesn't already exist
+                    if (key && value && obj[key] == null) {
                       obj[key] = value;
                     }
                   }
 
+                  // Helper to get value or empty string
                   const getValue = (key) => obj[key] || "";
                   const fields = {
                     surname: getValue("Επώνυμο"),
                     firstName: getValue("Όνομα"),
-                    fatherName: getValue("Όνομα Πατρός"),
-                    motherName: getValue("Όνομα Μητρός"),
-                    motherSurname: getValue("Επώνυμο Μητρός"),
-                    birthDate: getValue("Ημ/νία Γέννησης"),
-                    birthPlace: getValue("Τόπος Γέννησης").split(" ")[0],
-                    area: getValue("Περιοχή"),
-                    region: getValue("Νομός"),
-                    idNumber: getValue("Α.Δ.Τ"),
-                    phoneNumber: getValue("Τηλέφωνο"),
-                    street: getValue("Οδός"),
-                    streetNumber: getValue("Αριθμός"),
-                    sex: getValue("Φύλο"),
                   };
-                  resolve(fields);
+                  resolve(fields); // Resolve directly with structured fields (or obj if preferred)
                 } else {
                   // Container exists but no text yet—keep polling
                   if (attempts >= maxAttempts) {
@@ -102,7 +100,6 @@ document.getElementById("start").addEventListener("click", async () => {
                 setTimeout(checkForResults, pollInterval);
               }
             };
-
             checkForResults();
           });
         };
@@ -313,7 +310,7 @@ document.getElementById("start").addEventListener("click", async () => {
             await waitAndClickChangeLink();
             await waitAndClickRadio();
             await waitAndSelectOption();
-            await waitAndClickUpdateButton();
+            // await waitAndClickUpdateButton();
             console.log(`Work done for ID: ${id}`);
           } catch (error) {
             allResults.push({
@@ -335,10 +332,41 @@ document.getElementById("start").addEventListener("click", async () => {
       },
       args: [idNumbers],
     });
+    function downloadCSV(results) {
+      // Filter only successful results
+      const successful = results.filter((r) => r.success);
+
+      // Build CSV header
+      const header = ["idNumber", "surname", "firstName"];
+      const rows = [header.join(",")];
+
+      // Add each successful result as a row
+      successful.forEach((r) => {
+        const id = r.id || "";
+        const surname = r.data?.surname || "";
+        const firstName = r.data?.firstName || "";
+        rows.push([id, surname, firstName].join(","));
+      });
+
+      // Combine into CSV string
+      const csvContent = rows.join("\n");
+
+      // Create a Blob and trigger download
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", "results.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
 
     // Access all results
     const allData = results[0].result;
     console.log("All results received:", allData);
+    downloadCSV(allData);
 
     // Process the results
     allData.forEach((result) => {

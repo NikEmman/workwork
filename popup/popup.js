@@ -1,4 +1,9 @@
-const idNumbers = ["AH023321", "999999", "000000000"];
+// const idNumbers = ["AH723321", "AO323256", "AO323257"];
+let idNumbers = ["AH723321", "AO323256", "AO323257"];
+const idInput = document.getElementById("text");
+idInput.addEventListener("change", () => {
+  idNumbers = idInput.value.split(" ");
+});
 
 document.getElementById("start").addEventListener("click", async () => {
   try {
@@ -306,7 +311,6 @@ document.getElementById("start").addEventListener("click", async () => {
               success: true,
               data: resultData,
             });
-            // NEW: After extraction, wait for and click the change link
             await waitAndClickChangeLink();
             await waitAndClickRadio();
             await waitAndSelectOption();

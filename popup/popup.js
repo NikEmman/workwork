@@ -109,7 +109,6 @@ document.getElementById("start").addEventListener("click", async () => {
           });
         };
         // Helper function to wait for and click the change link
-        // Helper function to wait for and click the change link
         const waitAndClickChangeLink = () => {
           return new Promise((resolve, reject) => {
             const maxAttempts = 20; // ~4s total
@@ -284,7 +283,7 @@ document.getElementById("start").addEventListener("click", async () => {
         for (const id of ids) {
           console.log(`Processing ID: ${id}`);
 
-          const input = document.getElementById("t901adt_qs");
+          const input = document.querySelector('input[name$="adt_qs"]');
           const buttons = document.querySelectorAll("button");
           const searchBtn = Array.from(buttons).find(
             (btn) => btn.textContent.trim() === "Αναζήτηση"

@@ -1,9 +1,21 @@
 // const idNumbers = ["AH723321", "AO323256", "AO323257"];
-let idNumbers = ["AH723321", "AO323256", "AO323257"];
-const idInput = document.getElementById("text");
-idInput.addEventListener("change", () => {
-  idNumbers = idInput.value.split(" ");
-});
+const idNumbers = [
+  {
+    number: "AH723321",
+    dateOfDeath: "18/10/1980",
+    dateOfDispatch: "20/11/2025",
+  },
+  {
+    number: "AO323256",
+    dateOfDeath: "01/05/2020",
+    dateOfDispatch: "20/11/2025",
+  },
+  {
+    number: "AO323257",
+    dateOfDeath: "11/11/2024",
+    dateOfDispatch: "20/11/2025",
+  },
+];
 
 document.getElementById("start").addEventListener("click", async () => {
   try {
@@ -224,64 +236,70 @@ document.getElementById("start").addEventListener("click", async () => {
         };
 
         // Helper function to wait and click the submit button
-        const waitAndClickUpdateButton = () => {
+        const waitAndClickUpdateButton = (id) => {
           return new Promise((resolve, reject) => {
-            const maxAttempts = 20; // ~4s total
+            const maxAttempts = 20;
             let attempts = 0;
-            const pollInterval = 200; // Poll every 200ms
+            const pollInterval = 200;
 
             const checkAndClick = () => {
-              // 1. Find the specific button element by its ID
               const targetButton = document.getElementById("updateButton");
 
-              // 2. Check if we found the button element
               if (targetButton) {
-                // 3. Get the text content and normalize whitespace
                 const buttonText = targetButton.textContent
                   .trim()
                   .replace(/\s+/g, " ");
                 const expectedText = "Αποθήκευση Μεταβολής ΘΑΝΑΤΟΣ";
 
-                // 4. Check if the text content matches exactly
                 if (buttonText === expectedText) {
                   console.log(
-                    "Found button 'updateButton' with correct text. Clicking."
+                    "Found button 'Αποθήκευση' with correct text. Attempting to fill dates."
                   );
 
-                  // 5. Click the button
-                  targetButton.click();
+                  //  find and fill the inputs
 
-                  // 6. Wait a buffer period for any resulting actions
-                  setTimeout(() => resolve(), 2300);
+                  const dateDispatch = document.querySelector(
+                    'input[name$="arPrakshs"]'
+                  );
+                  const dateEvent = document.querySelector(
+                    'input[name$="hmersymb"]'
+                  );
+
+                  dateDispatch.value = id.dateOfDispatch;
+                  dateEvent.value = id.dateOfDeath;
+
+                  // Wait a bit for events to process before clicking
+                  setTimeout(() => {
+                    console.log("Clicking update button");
+                    targetButton.click();
+
+                    // Wait for any resulting actions
+                    setTimeout(() => resolve(), 2300);
+                  }, 500);
                 } else if (attempts >= maxAttempts) {
-                  // 7. Reject if we've tried too many times
                   reject(
                     new Error(
-                      `Timeout waiting for button 'updateButton' with text "${expectedText}". Found text: "${buttonText}"`
+                      `Timeout waiting for button with text "${expectedText}". Found: "${buttonText}"`
                     )
                   );
                 } else {
-                  // 8. Button found but text doesn't match yet, try again
                   attempts++;
                   setTimeout(checkAndClick, pollInterval);
                 }
               } else if (attempts >= maxAttempts) {
-                // 9. Reject if button never appears
                 reject(new Error("Timeout waiting for button 'updateButton'"));
               } else {
-                // 10. Button not found yet, try again
                 attempts++;
                 setTimeout(checkAndClick, pollInterval);
               }
             };
 
-            // Start the polling
             checkAndClick();
           });
         };
         // Process each ID
         for (const id of ids) {
-          console.log(`Processing ID: ${id}`);
+          console.log(`Processing ID: ${id.number}`);
 
           const input = document.querySelector('input[name$="adt_qs"]');
           const buttons = document.querySelectorAll("button");
@@ -297,7 +315,7 @@ document.getElementById("start").addEventListener("click", async () => {
           input.value = "";
           await new Promise((resolve) => requestAnimationFrame(resolve));
 
-          input.value = id;
+          input.value = id.number;
           searchBtn.click();
 
           // Wait for the simulated server delay (2000ms) + buffer
@@ -306,18 +324,18 @@ document.getElementById("start").addEventListener("click", async () => {
           try {
             const resultData = await waitForResults();
             allResults.push({
-              id: id,
+              id: id.number,
               success: true,
               data: resultData,
             });
             await waitAndClickChangeLink();
             await waitAndClickRadio();
             await waitAndSelectOption();
-            // await waitAndClickUpdateButton();
+            await waitAndClickUpdateButton(id);
             console.log(`Work done for ID: ${id}`);
           } catch (error) {
             allResults.push({
-              id: id,
+              id: id.number,
               success: false,
               error: error.message,
             });
@@ -345,7 +363,7 @@ document.getElementById("start").addEventListener("click", async () => {
 
       // Add each successful result as a row
       successful.forEach((r) => {
-        const id = r.id || "";
+        const id = r.id.number || "";
         const surname = r.data?.surname || "";
         const firstName = r.data?.firstName || "";
         rows.push([id, surname, firstName].join(","));

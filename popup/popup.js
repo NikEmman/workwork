@@ -1,4 +1,4 @@
-// const idNumbers = ["AH723321", "AO323256", "AO323257"];
+// popup.js
 const idNumbers = [
   {
     number: "ΑΗ723321",
@@ -17,387 +17,285 @@ const idNumbers = [
   },
 ];
 
-document.getElementById("start").addEventListener("click", async () => {
-  try {
-    const [tab] = await chrome.tabs.query({
-      active: true,
-      currentWindow: true,
-    });
+let currentTabId = null;
 
-    const results = await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      func: async (ids) => {
-        const allResults = [];
+async function getCurrentTab() {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  currentTabId = tab.id;
+  return tab;
+}
 
-        // Helper function to wait for results
-        const waitForResults = () => {
-          return new Promise((resolve, reject) => {
-            const pollInterval = 200; // Check every 200ms
-            const maxAttempts = 40; // Total ~8s of polling
-            let attempts = 0;
-            const checkForResults = () => {
-              const container = document.querySelector(".xdq");
-              if (container) {
-                // Quick validation: Ensure it has some text content loaded
-                const walker = document.createTreeWalker(
-                  container,
-                  NodeFilter.SHOW_TEXT,
-                  null,
-                  false
-                );
-                let hasText = false;
-                let node;
-                while ((node = walker.nextNode()) && !hasText) {
-                  const text = node.textContent.replace(/\s+/g, " ").trim();
-                  if (
-                    text.length > 0 &&
-                    text !== "▼" &&
-                    !text.startsWith("Σφάλμα")
-                  ) {
-                    hasText = true;
-                  }
-                }
-                if (hasText) {
-                  // Full extraction
-                  const texts = [];
-                  const fullWalker = document.createTreeWalker(
-                    container,
-                    NodeFilter.SHOW_TEXT,
-                    null,
-                    false
-                  );
-                  let fullNode;
-                  while ((fullNode = fullWalker.nextNode())) {
-                    const text = fullNode.textContent
-                      .replace(/\s+/g, " ")
-                      .trim();
-                    // Skip empties, arrows, and short numerics to reduce noise
-                    if (
-                      text.length > 0 &&
-                      text !== "▼" &&
-                      !/^\d{1,3}$/.test(text) // e.g., skip standalone "44"
-                    ) {
-                      texts.push(text);
-                    }
-                  }
-                  const obj = {};
+async function execute(fn, args = []) {
+  return chrome.scripting.executeScript({
+    target: { tabId: currentTabId },
+    func: fn,
+    args: args,
+  });
+}
 
-                  for (let i = 0; i < texts.length; i++) {
-                    const key = texts[i];
-                    const value = texts[(i + 1) % texts.length]; // wraparound for last element
+// Step 1: Search for ID
+async function searchById(idObj) {
+  await execute(
+    function (id) {
+      const input = document.querySelector('input[name$="adt_qs"]');
+      const buttons = document.querySelectorAll("button");
+      const searchBtn = Array.from(buttons).find(
+        (btn) => btn.textContent.trim() === "Αναζήτηση"
+      );
 
-                    // Only add if key doesn't already exist
-                    if (key && value && obj[key] == null) {
-                      obj[key] = value;
-                    }
-                  }
+      if (!input || !searchBtn) {
+        throw new Error("Search input or button not found");
+      }
 
-                  // Helper to get value or empty string
-                  const getValue = (key) => obj[key] || "";
-                  const fields = {
-                    surname: getValue("Επώνυμο"),
-                    firstName: getValue("Όνομα"),
-                  };
-                  resolve(fields); // Resolve directly with structured fields (or obj if preferred)
-                } else {
-                  // Container exists but no text yet—keep polling
-                  if (attempts >= maxAttempts) {
-                    reject(
-                      new Error("Timeout: Container found but no text loaded")
-                    );
-                  } else {
-                    attempts++;
-                    setTimeout(checkForResults, pollInterval);
-                  }
-                }
-              } else if (attempts >= maxAttempts) {
-                reject(new Error("Timeout waiting for container"));
-              } else {
-                attempts++;
-                setTimeout(checkForResults, pollInterval);
-              }
-            };
-            checkForResults();
-          });
-        };
-        // Helper function to wait for and click the change link
-        const waitAndClickChangeLink = () => {
-          return new Promise((resolve, reject) => {
-            const maxAttempts = 20; // ~4s total
-            let attempts = 0;
-            const pollInterval = 200;
+      input.value = id;
+      searchBtn.click();
+    },
+    [idObj.number]
+  );
 
-            const checkAndClick = () => {
-              // 1. Get ALL links with the 'xi' class
-              const allLinks = document.querySelectorAll("a.xi");
+  // Wait for results page to load
+  await new Promise((r) => setTimeout(r, 2800));
+}
 
-              // 2. Find the specific one by its text
-              const targetLink = Array.from(allLinks).find(
-                (link) => link.textContent.trim() === "Καταχώριση Μεταβολής"
-              );
+// Step 2: Extract person data from results
+// Step 2: Extract person data — USING YOUR ORIGINAL PROVEN LOGIC
+async function extractPersonData() {
+  const [result] = await execute(function () {
+    return new Promise((resolve, reject) => {
+      const pollInterval = 200;
+      const maxAttempts = 50; // ~10 seconds max
+      let attempts = 0;
 
-              // 3. Now check if we found the *correct* link
-              if (targetLink) {
-                console.log("Found and clicking 'Καταχώριση Μεταβολής' link");
-                targetLink.click();
-
-                // Wait for the simulated 'page3.html' fetch (2000ms) + buffer
-                setTimeout(() => resolve(), 2300);
-              } else if (attempts >= maxAttempts) {
-                reject(
-                  new Error("Timeout waiting for 'Καταχώριση Μεταβολής' link")
-                );
-              } else {
-                // Correct link not found yet, try again
-                attempts++;
-                setTimeout(checkAndClick, pollInterval);
-              }
-            };
-
-            checkAndClick();
-          });
-        };
-        //Helper function to wait for radio btn element to appear and click it
-        const waitAndClickRadio = () => {
-          return new Promise((resolve, reject) => {
-            const maxAttempts = 20; // ~4s total
-            let attempts = 0;
-            const pollInterval = 200; // Poll every 200ms
-
-            const checkAndClick = () => {
-              // 1. Find the specific radio button by its ID
-              const targetRadio = document.getElementById("type:0");
-
-              // 2. Check if we found the radio button
-              if (targetRadio) {
-                console.log("Found and clicking radio button 'type:0'");
-
-                // 3. Click the radio button. This will trigger the 'change'
-                //    event listener you attached in page3.html.
-                targetRadio.click();
-
-                // 4. Wait for the simulated 'page4.html' fetch (2000ms) + buffer
-                //    This matches the logic from your example function.
-                setTimeout(() => resolve(), 2300);
-              } else if (attempts >= maxAttempts) {
-                // 5. Reject if we've tried too many times
-                reject(new Error("Timeout waiting for radio button 'type:0'"));
-              } else {
-                // 6. Radio button not found yet, try again
-                attempts++;
-                setTimeout(checkAndClick, pollInterval);
-              }
-            };
-
-            // Start the polling
-            checkAndClick();
-          });
-        };
-        // Helper function to find the select element, and get option 9
-        const waitAndSelectOption = () => {
-          return new Promise((resolve, reject) => {
-            const maxAttempts = 20; // ~4s total
-            let attempts = 0;
-            const pollInterval = 200; // Poll every 200ms
-
-            const checkAndSelect = () => {
-              // 1. Find the specific select element by its ID
-              const targetSelect = document.getElementById("identityFlag");
-
-              // 2. Check if we found the select element
-              if (targetSelect) {
-                console.log("Found select 'identityFlag'. Setting value to 9.");
-
-                // 3. Set the value of the select element
-                targetSelect.value = "9";
-
-                // 4. Manually dispatch a 'change' event. This is critical
-                //    to trigger the event listener in page4.html.
-                targetSelect.dispatchEvent(
-                  new Event("change", { bubbles: true })
-                );
-
-                // 5. Wait for the simulated 'page5.html' fetch (2000ms) + buffer
-                //    This matches the logic from your other functions.
-                setTimeout(() => resolve(), 2300);
-              } else if (attempts >= maxAttempts) {
-                // 6. Reject if we've tried too many times
-                reject(new Error("Timeout waiting for select 'identityFlag'"));
-              } else {
-                // 7. Select element not found yet, try again
-                attempts++;
-                setTimeout(checkAndSelect, pollInterval);
-              }
-            };
-
-            // Start the polling
-            checkAndSelect();
-          });
-        };
-
-        // Helper function to wait and click the submit button
-        const waitAndClickUpdateButton = (id) => {
-          return new Promise((resolve, reject) => {
-            const maxAttempts = 20;
-            let attempts = 0;
-            const pollInterval = 200;
-
-            const checkAndClick = () => {
-              const targetButton = document.getElementById("updateButton");
-
-              if (targetButton) {
-                const buttonText = targetButton.textContent
-                  .trim()
-                  .replace(/\s+/g, " ");
-                const expectedText = "Αποθήκευση Μεταβολής ΘΑΝΑΤΟΣ";
-
-                if (buttonText === expectedText) {
-                  console.log(
-                    "Found button 'Αποθήκευση' with correct text. Attempting to fill dates."
-                  );
-
-                  //  find and fill the inputs
-
-                  const dateDispatch = document.querySelector(
-                    'input[name$="arPrakshs"]'
-                  );
-                  const dateEvent = document.querySelector(
-                    'input[name$="hmersymb"]'
-                  );
-
-                  dateDispatch.value = id.dateOfDispatch;
-                  dateEvent.value = id.dateOfDeath;
-
-                  // Wait a bit for events to process before clicking
-                  setTimeout(() => {
-                    console.log("Clicking update button");
-                    targetButton.click();
-
-                    // Wait for any resulting actions
-                    setTimeout(() => resolve(), 2300);
-                  }, 500);
-                } else if (attempts >= maxAttempts) {
-                  reject(
-                    new Error(
-                      `Timeout waiting for button with text "${expectedText}". Found: "${buttonText}"`
-                    )
-                  );
-                } else {
-                  attempts++;
-                  setTimeout(checkAndClick, pollInterval);
-                }
-              } else if (attempts >= maxAttempts) {
-                reject(new Error("Timeout waiting for button 'updateButton'"));
-              } else {
-                attempts++;
-                setTimeout(checkAndClick, pollInterval);
-              }
-            };
-
-            checkAndClick();
-          });
-        };
-        // Process each ID
-        for (const id of ids) {
-          console.log(`Processing ID: ${id.number}`);
-
-          const input = document.querySelector('input[name$="adt_qs"]');
-          const buttons = document.querySelectorAll("button");
-          const searchBtn = Array.from(buttons).find(
-            (btn) => btn.textContent.trim() === "Αναζήτηση"
-          );
-
-          if (!input || !searchBtn) {
-            throw new Error("Elements not found");
+      const check = () => {
+        const container = document.querySelector(".xdq");
+        if (!container) {
+          if (attempts >= maxAttempts)
+            reject(new Error("No .xdq container found"));
+          else {
+            attempts++;
+            setTimeout(check, pollInterval);
           }
+          return;
+        }
 
-          // Clear previous input/results if needed
-          input.value = "";
-          await new Promise((resolve) => requestAnimationFrame(resolve));
-
-          input.value = id.number;
-          searchBtn.click();
-
-          // Wait for the simulated server delay (2000ms) + buffer
-          await new Promise((resolve) => setTimeout(resolve, 2300));
-
-          try {
-            const resultData = await waitForResults();
-            allResults.push({
-              id: id.number,
-              success: true,
-              data: resultData,
-            });
-            await waitAndClickChangeLink();
-            await waitAndClickRadio();
-            await waitAndSelectOption();
-            await waitAndClickUpdateButton(id);
-            console.log(`Work done for ID: ${id.number}`);
-          } catch (error) {
-            allResults.push({
-              id: id.number,
-              success: false,
-              error: error.message,
-            });
-            console.error(`Error for ${id}:`, error);
-          }
-
-          // Delay between searches
-          if (ids.indexOf(id) < ids.length - 1) {
-            await new Promise((resolve) => setTimeout(resolve, 500));
+        // Quick check if real content exists
+        const walker = document.createTreeWalker(
+          container,
+          NodeFilter.SHOW_TEXT
+        );
+        let hasRealText = false;
+        let node;
+        while ((node = walker.nextNode()) && !hasRealText) {
+          const text = node.textContent.replace(/\s+/g, " ").trim();
+          if (text && text !== "▼" && !text.startsWith("Σφάλμα")) {
+            hasRealText = true;
           }
         }
-        console.log("All results received:", allResults);
 
-        return allResults;
-      },
-      args: [idNumbers],
+        if (!hasRealText) {
+          if (attempts >= maxAttempts) {
+            reject(new Error("Container found but no valid text loaded"));
+          } else {
+            attempts++;
+            setTimeout(check, pollInterval);
+          }
+          return;
+        }
+
+        // FULL EXTRACTION — your exact working code
+        const texts = [];
+        const fullWalker = document.createTreeWalker(
+          container,
+          NodeFilter.SHOW_TEXT
+        );
+        let fullNode;
+        while ((fullNode = fullWalker.nextNode())) {
+          const text = fullNode.textContent.replace(/\s+/g, " ").trim();
+          if (
+            text &&
+            text !== "▼" &&
+            !/^\d{1,3}$/.test(text) &&
+            !text.startsWith("Σφάλμα")
+          ) {
+            texts.push(text);
+          }
+        }
+
+        // Build object with wrap-around fallback (your genius trick)
+        const obj = {};
+        for (let i = 0; i < texts.length; i++) {
+          const key = texts[i];
+          const value = texts[(i + 1) % texts.length];
+          if (key && value && obj[key] == null) {
+            obj[key] = value;
+          }
+        }
+
+        const getValue = (k) => obj[k] || "";
+        const fields = {
+          surname: getValue("Επώνυμο"),
+          firstName: getValue("Όνομα"),
+        };
+
+        // Final sanity check
+        if (!fields.surname && !fields.firstName) {
+          reject(new Error("Name fields empty – possible parsing issue"));
+        } else {
+          resolve({
+            success: true,
+            surname: fields.surname.trim(),
+            firstName: fields.firstName.trim(),
+          });
+        }
+      };
+
+      check();
     });
-    function downloadCSV(results) {
-      // Filter only successful results
-      const successful = results.filter((r) => r.success);
+  });
 
-      // Build CSV header
-      const header = ["idNumber", "surname", "firstName"];
-      const rows = [header.join(",")];
+  if (!result.result || !result.result.success) {
+    throw new Error(result.result?.error || "Failed to extract data");
+  }
 
-      // Add each successful result as a row
-      successful.forEach((r) => {
-        const idNumber = r.id;
-        const surname = r.data?.surname || "";
-        const firstName = r.data?.firstName || "";
-        rows.push([idNumber, surname, firstName].join(","));
-      });
+  return result.result;
+}
 
-      // Combine into CSV string
-      const csvContent = rows.join("\n");
+// Step 3: Click "Καταχώριση Μεταβολής"
+async function clickChangeLink() {
+  await execute(function () {
+    const links = document.querySelectorAll("a.xi");
+    const target = Array.from(links).find(
+      (l) => l.textContent.trim() === "Καταχώριση Μεταβολής"
+    );
+    if (!target) throw new Error("Link 'Καταχώριση Μεταβολής' not found");
+    target.click();
+  });
 
-      // Create a Blob and trigger download
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
+  await new Promise((r) => setTimeout(r, 2800)); // wait for page3.html
+}
 
-      const link = document.createElement("a");
-      link.setAttribute("href", url);
-      link.setAttribute("download", "results.csv");
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+// Step 4: Select death radio button
+async function selectDeathRadio() {
+  await execute(function () {
+    const radio = document.getElementById("type:0");
+    if (!radio) throw new Error("Radio button type:0 not found");
+    radio.click();
+  });
+
+  await new Promise((r) => setTimeout(r, 2800)); // wait for page4.html
+}
+
+// Step 5: Select identityFlag = 9
+async function selectIdentityFlag() {
+  await execute(function () {
+    const select = document.getElementById("identityFlag");
+    if (!select) throw new Error("Select identityFlag not found");
+    select.value = "9";
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+
+  await new Promise((r) => setTimeout(r, 2800)); // wait for page5.html
+}
+
+// Step 6: Fill dates and submit death registration
+async function submitDeathRegistration(idObj) {
+  await execute(
+    function (data) {
+      const dispatchInput = document.querySelector('input[name$="arPrakshs"]');
+      const deathInput = document.querySelector('input[name$="hmersymb"]');
+      const button = document.getElementById("updateButton");
+
+      if (!button || !dispatchInput || !deathInput) {
+        throw new Error("Required elements not found on final page");
+      }
+
+      const expectedText = "Αποθήκευση Μεταβολής ΘΑΝΑΤΟΣ";
+      if (button.textContent.trim().replace(/\s+/g, " ") !== expectedText) {
+        throw new Error(`Button text mismatch: "${button.textContent.trim()}"`);
+      }
+
+      dispatchInput.value = data.dateOfDispatch;
+      deathInput.value = data.dateOfDeath;
+
+      setTimeout(() => button.click(), 500);
+    },
+    [idObj]
+  );
+
+  await new Promise((r) => setTimeout(r, 3500)); // final submission delay
+}
+
+// Main workflow
+document.getElementById("start").addEventListener("click", async () => {
+  try {
+    await getCurrentTab();
+    const results = [];
+
+    for (const [index, id] of idNumbers.entries()) {
+      console.log(`Processing ${index + 1}/${idNumbers.length}: ${id.number}`);
+
+      try {
+        await searchById(id);
+        const personData = await extractPersonData();
+
+        if (!personData.success) throw new Error(personData.error);
+
+        await clickChangeLink();
+        await selectDeathRadio();
+        await selectIdentityFlag();
+        await submitDeathRegistration(id);
+
+        results.push({
+          id: id.number,
+          success: true,
+          surname: personData.surname,
+          firstName: personData.firstName,
+        });
+
+        console.log(
+          `Success: ${id.number} - ${personData.surname} ${personData.firstName}`
+        );
+      } catch (err) {
+        results.push({
+          id: id.number,
+          success: false,
+          error: err.message,
+        });
+        console.error(`Failed: ${id.number} →`, err.message);
+      }
+
+      // Small delay between records (be gentle to server)
+      if (index < idNumbers.length - 1) {
+        await new Promise((r) => setTimeout(r, 1000));
+      }
     }
 
-    // Access all results
-    const allData = results[0].result;
-    console.log("All results received:", allData);
-    downloadCSV(allData);
-
-    // Process the results
-    allData.forEach((result) => {
-      if (result.success) {
-        console.log(`ID ${result.id} - Data:`, result.data);
-      } else {
-        console.log(`ID ${result.id} - Failed: ${result.error}`);
-      }
-    });
-  } catch (error) {
-    console.error("Error executing script:", error);
+    downloadCSV(results);
+    alert(
+      `Completed! ${results.filter((r) => r.success).length}/${
+        results.length
+      } successful`
+    );
+  } catch (err) {
+    console.error("Fatal error:", err);
+    alert("Error: " + err.message);
   }
 });
+
+function downloadCSV(results) {
+  const successful = results.filter((r) => r.success);
+  const rows = [
+    ["ID", "Επώνυμο", "Όνομα"].join(","),
+    ...successful.map((r) => [r.id, r.surname, r.firstName].join(",")),
+  ];
+
+  const csv = rows.join("\n");
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `data.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}

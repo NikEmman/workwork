@@ -12,34 +12,29 @@
   </head>
 
   <body class="bg-gray-800 p-10 flex flex-col gap-2">
-    <div
-      class="mt-2 flex justify-center rounded-lg border border-dashed border-white/25 px-6 py-10"
-    >
-      <div class="text-center">
-        <div class="mt-4 flex text-sm/6 text-gray-400">
-          <input type="text" name="" id="text" />
-          <!-- <label
-            for="file-upload"
-            class="relative cursor-pointer rounded-md bg-transparent font-semibold text-indigo-400 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-indigo-500 hover:text-indigo-300"
-          >
-            <span>Upload a file</span>
-            <input
-              id="file-upload"
-              type="file"
-              name="file-upload"
-              class="sr-only"
-            />
-          </label> -->
-          <p class="pl-1">or drag and drop</p>
-        </div>
-        <p class="text-xs/5 text-gray-400">TXT</p>
-      </div>
+    <div class="p-4">
+      <label class="block text-sm font-medium text-gray-400 mb-2">
+        Paste your CSV here (auto-parsed on paste or type):
+      </label>
+      <textarea
+        id="csv-input"
+        rows="12"
+        class="w-full p-3 border border-gray-300 rounded-lg font-mono text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-vertical"
+        placeholder="number,dateOfDeath,dateOfDispatch
+ΑΗ723321,18/10/1980,20/11/2025
+ΑΟ323256,01/05/2020,20/11/2025
+ΑΟ323257,11/11/2024,20/11/2025"
+      ></textarea>
+
+      <div id="parse-status" class="mt-3 text-sm font-medium"></div>
+
+      <button
+        id="start"
+        disabled
+        class="mt-4 w-full px-6 py-3 bg-green-500 text-white text-lg font-semibold rounded-lg disabled:bg-gray-400 disabled:cursor-not-allowed hover:bg-green-900 transition"
+      >
+        Start Processing
+      </button>
     </div>
-    <button
-      class="bg-indigo-700 text-gray-100 hover:bg-indigo-400 text-white font-bold py-2 px-4 rounded-full self-end"
-      id="start"
-    >
-      Start
-    </button>
   </body>
 </html>

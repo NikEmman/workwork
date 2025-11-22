@@ -1,5 +1,5 @@
 // popup.js
-const idNumbers = [
+let idNumbers = [
   {
     number: "ΑΗ723321",
     dateOfDeath: "18/10/1980",
@@ -16,9 +16,80 @@ const idNumbers = [
     dateOfDispatch: "20/11/2025",
   },
 ];
-
 let currentTabId = null;
 
+const textarea = document.getElementById("csv-input");
+const statusEl = document.getElementById("parse-status");
+const startBtn = document.getElementById("start");
+
+// Auto-parse on any change (typing, paste, drop)
+const autoParse = () => {
+  const text = textarea.value.trim();
+  if (!text) {
+    statusEl.textContent = "";
+    // startBtn.disabled = true;
+    idNumbers = [];
+    return;
+  }
+
+  try {
+    idNumbers = parseCSV(text);
+    statusEl.innerHTML = `<span class="text-green-600">Loaded ${idNumbers.length} records – Ready!</span>`;
+    startBtn.disabled = false;
+  } catch (err) {
+    statusEl.innerHTML = `<span class="text-red-600">Error: ${err.message}</span>`;
+    startBtn.disabled = true;
+    idNumbers = [];
+  }
+};
+
+// Trigger parse on:
+// 1. Paste
+textarea.addEventListener("paste", () => setTimeout(autoParse, 50));
+
+// 2. Any typing (with tiny debounce for performance)
+let timeout;
+textarea.addEventListener("input", () => {
+  clearTimeout(timeout);
+  timeout = setTimeout(autoParse, 300);
+});
+
+function parseCSV(csvText) {
+  const lines = csvText
+    .trim()
+    .split(/\r\n|\n|\r/)
+    .map((l) => l.trim())
+    .filter((l) => l !== "");
+
+  if (lines.length === 0) throw new Error("No data found");
+
+  // Flexible header detection
+  const header = lines[0].toLowerCase();
+  const hasNumber = header.includes("number");
+  const hasDeath = header.includes("death") && header.includes("date");
+  const hasDispatch = header.includes("dispatch") || header.includes("date");
+
+  if (!hasNumber || !hasDeath || !hasDispatch) {
+    throw new Error("CSV missing columns: number, dateOfDeath, dateOfDispatch");
+  }
+
+  const result = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split(",").map((s) => s.trim());
+    if (cols.length < 3) {
+      console.warn(`Skipping bad line ${i + 1}:`, lines[i]);
+      continue;
+    }
+
+    const [number, dateOfDeath, dateOfDispatch] = cols;
+    if (!number) continue;
+
+    result.push({ number, dateOfDeath, dateOfDispatch });
+  }
+
+  if (result.length === 0) throw new Error("No valid records found");
+  return result;
+}
 async function getCurrentTab() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   currentTabId = tab.id;

@@ -259,7 +259,6 @@ document.getElementById("start").addEventListener("click", async () => {
           fatherName: personData.fatherName,
           motherName: personData.motherName,
           birthDate: personData.birthDate,
-          dateOfDeath: id.dateOfDeath,
         });
       } catch (err) {
         results.push({
@@ -291,15 +290,7 @@ document.getElementById("start").addEventListener("click", async () => {
 function downloadCSV(results) {
   const successful = results.filter((r) => r.success);
   const rows = [
-    [
-      "ΑΔΤ",
-      "Επώνυμο",
-      "Όνομα",
-      "Πατρώνυμο",
-      "Μητρώνυμο",
-      "Γέννηση",
-      "Θάνατος",
-    ].join(","),
+    ["ID", "Επώνυμο", "Όνομα", "Πατρώνυμο", "Μητρώνυμο", "Γεννηση"].join(","),
     ...successful.map((r) =>
       [
         r.id,
@@ -308,7 +299,6 @@ function downloadCSV(results) {
         r.fatherName,
         r.motherName,
         r.birthDate,
-        r.dateOfDeath,
       ].join(",")
     ),
   ];

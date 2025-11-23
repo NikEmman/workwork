@@ -129,7 +129,6 @@ async function searchById(idObj) {
 }
 
 // Step 2: Extract person data from results
-// Step 2: Extract person data — USING YOUR ORIGINAL PROVEN LOGIC
 async function extractPersonData() {
   const [result] = await execute(function () {
     return new Promise((resolve, reject) => {
@@ -173,7 +172,6 @@ async function extractPersonData() {
           return;
         }
 
-        // FULL EXTRACTION — your exact working code
         const texts = [];
         const fullWalker = document.createTreeWalker(
           container,
@@ -192,7 +190,6 @@ async function extractPersonData() {
           }
         }
 
-        // Build object with wrap-around fallback (your genius trick)
         const obj = {};
         for (let i = 0; i < texts.length; i++) {
           const key = texts[i];
@@ -248,18 +245,18 @@ async function clickChangeLink() {
     target.click();
   });
 
-  await new Promise((r) => setTimeout(r, 2800)); // wait for page3.html
+  await new Promise((r) => setTimeout(r, 2800)); // wait for next page
 }
 
-// Step 4: Select death radio button
+// Step 4: Select Ακύρωση radio button
 async function selectDeathRadio() {
   await execute(function () {
     const radio = document.getElementById("type:0");
-    if (!radio) throw new Error("Radio button type:0 not found");
+    if (!radio) throw new Error("Radio button Ακύρωση not found");
     radio.click();
   });
 
-  await new Promise((r) => setTimeout(r, 2800)); // wait for page4.html
+  await new Promise((r) => setTimeout(r, 2800)); // wait for next page
 }
 
 // Step 5: Select identityFlag = 9
@@ -271,7 +268,7 @@ async function selectIdentityFlag() {
     select.dispatchEvent(new Event("change", { bubbles: true }));
   });
 
-  await new Promise((r) => setTimeout(r, 2800)); // wait for page5.html
+  await new Promise((r) => setTimeout(r, 2800)); // wait for next page
 }
 
 // Step 6: Fill dates and submit death registration
@@ -294,7 +291,7 @@ async function submitDeathRegistration(idObj) {
       dispatchInput.value = data.dateOfDispatch;
       deathInput.value = data.dateOfDeath;
 
-      setTimeout(() => button.click(), 500);
+      // setTimeout(() => button.click(), 500); //temp commented out for live testing
     },
     [idObj]
   );

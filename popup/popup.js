@@ -31,9 +31,8 @@ const autoParse = () => {
     idNumbers = [];
     return;
   }
-
   try {
-    idNumbers = parseCSV(text);
+    idNumbers = parseExcelData(text);
     statusEl.innerHTML = `<span class="text-green-600">Loaded ${idNumbers.length} records – Ready!</span>`;
     startBtn.disabled = false;
   } catch (err) {
@@ -54,8 +53,8 @@ textarea.addEventListener("input", () => {
   timeout = setTimeout(autoParse, 300);
 });
 
-function parseCSV(csvText) {
-  const lines = csvText
+function parseExcelData(text) {
+  const lines = text
     .trim()
     .split(/\r\n|\n|\r/)
     .map((l) => l.trim())
@@ -63,31 +62,29 @@ function parseCSV(csvText) {
 
   if (lines.length === 0) throw new Error("No data found");
 
-  // Flexible header detection
-  const header = lines[0].toLowerCase();
-  const hasNumber = header.includes("number");
-  const hasDeath = header.includes("death") && header.includes("date");
-  const hasDispatch = header.includes("dispatch") || header.includes("date");
-
-  if (!hasNumber || !hasDeath || !hasDispatch) {
-    throw new Error("CSV missing columns: number, dateOfDeath, dateOfDispatch");
-  }
-
   const result = [];
-  for (let i = 1; i < lines.length; i++) {
-    const cols = lines[i].split(",").map((s) => s.trim());
+
+  for (let i = 0; i < lines.length; i++) {
+    // Split by tabs or multiple spaces (handles Excel paste format)
+    const cols = lines[i]
+      .split(/\t+|\s{2,}/)
+      .map((s) => s.trim())
+      .filter((s) => s !== "");
+
     if (cols.length < 3) {
       console.warn(`Skipping bad line ${i + 1}:`, lines[i]);
       continue;
     }
 
     const [number, dateOfDeath, dateOfDispatch] = cols;
+
     if (!number) continue;
 
     result.push({ number, dateOfDeath, dateOfDispatch });
   }
 
   if (result.length === 0) throw new Error("No valid records found");
+
   return result;
 }
 async function getCurrentTab() {
@@ -291,7 +288,7 @@ async function submitDeathRegistration(idObj) {
       dispatchInput.value = data.dateOfDispatch;
       deathInput.value = data.dateOfDeath;
 
-      // setTimeout(() => button.click(), 500); //temp commented out for live testing
+      setTimeout(() => button.click(), 500); //temp commented out for live testing
     },
     [idObj]
   );

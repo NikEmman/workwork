@@ -33,6 +33,7 @@ const autoParse = () => {
   }
   try {
     idNumbers = parseExcelData(text);
+    console.log(idNumbers[0]);
     statusEl.innerHTML = `<span class="text-green-600">Loaded ${idNumbers.length} records – Ready!</span>`;
     startBtn.disabled = false;
   } catch (err) {
@@ -203,6 +204,7 @@ async function extractPersonData() {
           fatherName: getValue("Όνομα Πατρός"),
           motherName: getValue("Όνομα Μητρός"),
           birthDate: getValue("Ημ/νία Γέννησης"),
+          birthPlace: getValue("Τόπος Γέννησης").split(" ")[0],
         };
 
         // Final sanity check
@@ -216,6 +218,7 @@ async function extractPersonData() {
             fatherName: fields.fatherName.trim(),
             motherName: fields.motherName.trim(),
             birthDate: fields.birthDate.trim(),
+            birthPlace: fields.birthPlace.trim(),
           });
         }
       };
@@ -324,6 +327,7 @@ document.getElementById("start").addEventListener("click", async () => {
           fatherName: personData.fatherName,
           motherName: personData.motherName,
           birthDate: personData.birthDate,
+          birthPlace: personData.birthPlace,
           dateOfDeath: id.dateOfDeath,
         });
       } catch (err) {
@@ -363,6 +367,7 @@ function downloadCSV(results) {
       "Πατρώνυμο",
       "Μητρώνυμο",
       "Γέννηση",
+      "Τοπος Γεν.",
       "Θάνατος",
     ].join(","),
     ...successful.map((r) =>
@@ -373,6 +378,7 @@ function downloadCSV(results) {
         r.fatherName,
         r.motherName,
         r.birthDate,
+        r.birthPlace,
         r.dateOfDeath,
       ].join(",")
     ),

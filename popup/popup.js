@@ -34,7 +34,7 @@ const autoParse = () => {
   try {
     idNumbers = parseExcelData(text);
     console.log(idNumbers[0]);
-    statusEl.innerHTML = `<span class="text-green-600">Loaded ${idNumbers.length} records – Ready!</span>`;
+    statusEl.innerHTML = `<span class="text-green-600">Φορτώθηκαν ${idNumbers.length} ταυτότητες – Έτοιμοι!</span>`;
     startBtn.disabled = false;
   } catch (err) {
     statusEl.innerHTML = `<span class="text-red-600">Error: ${err.message}</span>`;
@@ -61,7 +61,7 @@ function parseExcelData(text) {
     .map((l) => l.trim())
     .filter((l) => l !== "");
 
-  if (lines.length === 0) throw new Error("No data found");
+  if (lines.length === 0) throw new Error("Δεν βρέθηκαν δεδομένα");
 
   const result = [];
 
@@ -84,7 +84,7 @@ function parseExcelData(text) {
     result.push({ number, dateOfDeath, dateOfDispatch });
   }
 
-  if (result.length === 0) throw new Error("No valid records found");
+  if (result.length === 0) throw new Error("Λάθος στη μορφή δεδομένων");
 
   return result;
 }

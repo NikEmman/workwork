@@ -16,6 +16,7 @@ let idNumbers = [
     dateOfDispatch: "20/11/2025",
   },
 ];
+const department = "Τ.Α. ΚΟΜΟΤΗΝΗΣ";
 let currentTabId = null;
 
 const textarea = document.getElementById("csv-input");
@@ -277,6 +278,9 @@ async function submitDeathRegistration(idObj) {
     function (data) {
       const dispatchInput = document.querySelector('input[name$="arPrakshs"]');
       const deathInput = document.querySelector('input[name$="hmersymb"]');
+      const departmentInput = document.querySelector(
+        'input[name$="lektikoArxhs"]'
+      );
       const button = document.getElementById("updateButton");
 
       if (!button || !dispatchInput || !deathInput) {
@@ -290,6 +294,7 @@ async function submitDeathRegistration(idObj) {
 
       dispatchInput.value = data.dateOfDispatch;
       deathInput.value = data.dateOfDeath;
+      departmentInput.value = department;
 
       setTimeout(() => button.click(), 500); //temp commented out for live testing
     },

@@ -18,7 +18,7 @@
 // ];
 let idNumbers = [];
 
-const department = "Τ.Α. ΚΟΜΟΤΗΝΗΣ";
+// const department = "Τ.Α. ΚΟΜΟΤΗΝΗΣ";
 let currentTabId = null;
 
 const textarea = document.getElementById("csv-input");
@@ -297,7 +297,7 @@ async function submitDeathRegistration(idObj) {
       dispatchInput.value = data.dateOfDispatch;
       deathInput.value = data.dateOfDeath;
 
-      remarksInput.value = department;
+      remarksInput.value = "Τ.Α. ΚΟΜΟΤΗΝΗΣ";
 
       setTimeout(() => button.click(), 500);
     },

@@ -1,21 +1,23 @@
 // popup.js
-let idNumbers = [
-  {
-    number: "ΑΗ723321",
-    dateOfDeath: "18/10/1980",
-    dateOfDispatch: "20/11/2025",
-  },
-  {
-    number: "ΑΟ323256",
-    dateOfDeath: "01/05/2020",
-    dateOfDispatch: "20/11/2025",
-  },
-  {
-    number: "ΑΟ323257",
-    dateOfDeath: "11/11/2024",
-    dateOfDispatch: "20/11/2025",
-  },
-];
+// let idNumbers = [
+//   {
+//     number: "ΑΗ723321",
+//     dateOfDeath: "18/10/1980",
+//     dateOfDispatch: "20/11/2025",
+//   },
+//   {
+//     number: "ΑΟ323256",
+//     dateOfDeath: "01/05/2020",
+//     dateOfDispatch: "20/11/2025",
+//   },
+//   {
+//     number: "ΑΟ323257",
+//     dateOfDeath: "11/11/2024",
+//     dateOfDispatch: "20/11/2025",
+//   },
+// ];
+let idNumbers = [];
+
 const department = "Τ.Α. ΚΟΜΟΤΗΝΗΣ";
 let currentTabId = null;
 
@@ -278,12 +280,12 @@ async function submitDeathRegistration(idObj) {
     function (data) {
       const dispatchInput = document.querySelector('input[name$="arPrakshs"]');
       const deathInput = document.querySelector('input[name$="hmersymb"]');
-      const departmentInput = document.querySelector(
+      const remarksInput = document.querySelector(
         'input[name$="lektikoArxhs"]'
       );
-      const button = document.getElementById("updateButton");
+      const button = document.getElementById("updateButton"); // Update: Include the new element in the existence check
 
-      if (!button || !dispatchInput || !deathInput) {
+      if (!button || !dispatchInput || !deathInput || !remarksInput) {
         throw new Error("Required elements not found on final page");
       }
 
@@ -294,9 +296,10 @@ async function submitDeathRegistration(idObj) {
 
       dispatchInput.value = data.dateOfDispatch;
       deathInput.value = data.dateOfDeath;
-      departmentInput.value = department;
 
-      setTimeout(() => button.click(), 500); //temp commented out for live testing
+      remarksInput.value = department;
+
+      setTimeout(() => button.click(), 500);
     },
     [idObj]
   );

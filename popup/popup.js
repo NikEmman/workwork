@@ -306,7 +306,39 @@ async function submitDeathRegistration(idObj) {
 
   await new Promise((r) => setTimeout(r, 3500)); // final submission delay
 }
+//step7 click return button
+async function clickReturnButton() {
+  await execute(function () {
+    const button = document.getElementById("finishEditButton");
+    if (!button) throw new Error("Επιστροφή στην προβολή δεν βρέθηκε");
+    button.click();
+  });
 
+  await new Promise((r) => setTimeout(r, 2800)); // wait for next page
+}
+//step8 click destroy link
+async function clickDestroyLink() {
+  await execute(function () {
+    const links = document.querySelectorAll("a.xi");
+    const target = Array.from(links).find(
+      (l) => l.textContent.trim() === "Καταχώριση Καταστροφής"
+    );
+    if (!target) throw new Error("Link 'Καταχώριση Καταστροφής' not found");
+    target.click();
+  });
+
+  await new Promise((r) => setTimeout(r, 2800)); // wait for next page
+}
+//step9 click store button
+async function clickStoreButton() {
+  await execute(function () {
+    const button = document.getElementById("updateButton");
+    if (!button) throw new Error("Επιστροφή στην προβολή δεν βρέθηκε");
+    button.click();
+  });
+
+  await new Promise((r) => setTimeout(r, 2800)); // wait for next page
+}
 // Main workflow
 document.getElementById("start").addEventListener("click", async () => {
   try {
@@ -326,6 +358,9 @@ document.getElementById("start").addEventListener("click", async () => {
         await selectDeathRadio();
         await selectIdentityFlag();
         await submitDeathRegistration(id);
+        await clickReturnButton();
+        await clickDestroyLink();
+        await clickStoreButton();
 
         results.push({
           id: id.number,
@@ -336,7 +371,7 @@ document.getElementById("start").addEventListener("click", async () => {
           motherName: personData.motherName,
           birthDate: personData.birthDate,
           birthPlace: personData.birthPlace,
-          dateOfDeath: id.dateOfDeath,
+          status: "Θάνατος",
         });
       } catch (err) {
         results.push({
@@ -376,7 +411,7 @@ function downloadCSV(results) {
       "Μητρώνυμο",
       "Γέννηση",
       "Τοπος Γεν.",
-      "Θάνατος",
+      "Μεταβολή",
     ].join(","),
     ...successful.map((r) =>
       [
@@ -387,7 +422,7 @@ function downloadCSV(results) {
         r.motherName,
         r.birthDate,
         r.birthPlace,
-        r.dateOfDeath,
+        r.status,
       ].join(",")
     ),
   ];
